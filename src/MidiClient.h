@@ -52,6 +52,7 @@ class MidiClient {
         NoteCallback _onNoteCallback;
 
         TaskHandle_t _class_driver_task_hdl;
+        class_driver_t _driver_obj = {0};
 
         bool _isMidiInterfaceClaimed;
         bool _isMidiEndpointsPrepared;
@@ -65,13 +66,15 @@ class MidiClient {
         static void client_event_cb(const usb_host_client_event_msg_t *event_msg, void *arg);
         static void midi_transfer_cb(usb_transfer_t *transfer);
 
-        void action_open_dev(class_driver_t *driver_obj);
-        void action_get_info(class_driver_t *driver_obj);
-        void action_get_dev_desc(class_driver_t *driver_obj);
-        void action_get_config_desc(class_driver_t *driver_obj);
-        void action_get_str_desc(class_driver_t *driver_obj);
-        void action_close_dev(class_driver_t *driver_obj);
-        void action_enable_midi(class_driver_t* driver_obj);
-        void claimInterface(class_driver_t* driver_obj, const usb_intf_desc_t* intf);
-        void prepareEndpoints(class_driver_t* driver_obj, const usb_ep_desc_t* endpoint);
+        void runDaemon();
+        void client_event_cb_impl(const usb_host_client_event_msg_t *event_msg);
+        void action_open_dev();
+        void action_get_info();
+        void action_get_dev_desc();
+        void action_get_config_desc();
+        void action_get_str_desc();
+        void action_close_dev();
+        void action_enable_midi();
+        void claimInterface(const usb_intf_desc_t* intf);
+        void prepareEndpoints(const usb_ep_desc_t* endpoint);
 };
