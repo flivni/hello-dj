@@ -20,16 +20,16 @@ class MidiClient {
 
         static const char* TAG;
 
-        typedef void (*NoteCallback)(uint8_t, uint8_t, uint8_t);
+        typedef void (*NoteCallback)(uint8_t channel, uint8_t noteNumber, uint8_t velocity);
+        typedef void (*ControlChangeCallback)(uint8_t channel, uint8_t controlNumber, uint8_t controlValue);
 
         MidiClient();
         virtual ~MidiClient();
 
-        void begin();
-
-        // Note: currently we support just a single callback
-        void registerOnNoteCallback(NoteCallback callback);
-
+        MidiClient& begin();
+        MidiClient& registerNoteOnCallback(NoteCallback callback);
+        MidiClient& registerNoteOffCallback(NoteCallback callback);
+        MidiClient& registerControlChangeCallback(ControlChangeCallback callback);
 
     private:
         typedef enum {
@@ -49,7 +49,9 @@ class MidiClient {
 
         class_driver_t* driver_obj;
 
-        NoteCallback _onNoteCallback;
+        NoteCallback _noteOnCallback;
+        NoteCallback _noteOffCallback;
+        ControlChangeCallback _controlChangeCallback;
 
         TaskHandle_t _class_driver_task_hdl;
         class_driver_t _driver_obj = {0};

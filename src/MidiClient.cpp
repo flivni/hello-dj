@@ -20,7 +20,7 @@ MidiClient::~MidiClient() {
     // Destructor
 }
 
-void MidiClient::begin() {
+MidiClient& MidiClient::begin() {
     BaseType_t task_created;
     task_created = xTaskCreatePinnedToCore(daemonTask,
         "midi-client",
@@ -30,8 +30,25 @@ void MidiClient::begin() {
         &_class_driver_task_hdl,
         0);
     assert(task_created == pdTRUE);
+    return *this;
 }
 
+MidiClient& MidiClient::registerNoteOnCallback(NoteCallback cb) {
+    _noteOnCallback = cb;
+    return *this;
+}
+
+MidiClient& MidiClient::registerNoteOffCallback(NoteCallback cb) {
+    _noteOffCallback = cb;
+    return *this;
+}
+
+MidiClient& MidiClient::registerControlChangeCallback(ControlChangeCallback cb) {
+    _controlChangeCallback = cb;
+    return *this;
+}
+
+// private
 void MidiClient::daemonTask(void *arg)
 {
     MidiClient* pThis = (MidiClient*)arg;
@@ -136,10 +153,18 @@ void MidiClient::midi_transfer_cb(usb_transfer_t *transfer)
         uint8_t status = p[i+1];
         uint8_t channel = 0; // not sure how to get this
         
-        if (status == 0x90 && pThis->_onNoteCallback != NULL) {
+        if (status == 0x90 && pThis->_noteOnCallback != NULL) {
             uint8_t note = p[i+2];
             uint8_t velocity = p[i+3];
-            pThis->_onNoteCallback(channel, note, velocity);
+            pThis->_noteOnCallback(channel, note, velocity);
+        } else if (status == 0x80 && pThis->_noteOffCallback != NULL) {
+            uint8_t note = p[i+2];
+            uint8_t velocity = p[i+3];
+            pThis->_noteOffCallback(channel, note, velocity);
+        } else if (status == 0xb0 && pThis->_noteOnCallback != NULL) {
+            uint8_t controlNumber = p[i+2];
+            uint8_t controlValue = p[i+3];
+            pThis->_controlChangeCallback(channel, controlNumber, controlValue);
         }
       }
       esp_err_t err = usb_host_transfer_submit(transfer);
@@ -168,7 +193,7 @@ void MidiClient::action_get_info()
     ESP_LOGE(TAG, "Getting device information"); // Was LOGI
     usb_device_info_t dev_info;
     ESP_ERROR_CHECK(usb_host_device_info(_driver_obj.dev_hdl, &dev_info));
-    ESP_LOGE(TAG, "\t%s speed", (char *[]) { // Was LOGI
+    ESP_LOGE(TAG, "\t%s speed", (const char *[]) { // Was LOGI
         "Low", "Full", "High"
     }[dev_info.speed]);
     ESP_LOGE(TAG, "\tbConfigurationValue %d", dev_info.bConfigurationValue); // Was LOGI
@@ -357,8 +382,4 @@ void MidiClient::action_close_dev()
     //We need to connect a new device
     _driver_obj.actions &= ~ACTION_CLOSE_DEV;
     _driver_obj.actions |= ACTION_RECONNECT;
-}
-
-void MidiClient::registerOnNoteCallback(NoteCallback cb) {
-    _onNoteCallback = cb;
 }

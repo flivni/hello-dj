@@ -19,7 +19,7 @@ MidiHost::~MidiHost() {
     // Destructor
 }
 
-void MidiHost::begin() {
+MidiHost& MidiHost::begin() {
     ESP_LOGI(TAG, "begin1()");
     ESP_LOGW(TAG, "begin2()");
     ESP_LOGE(TAG, "begin3()");
@@ -32,16 +32,21 @@ void MidiHost::begin() {
         &_host_lib_task_hdl,
         0);
     assert(task_created == pdTRUE);
+    return *this;
 }
 
-void MidiHost::waitUntilReady() {
+MidiHost& MidiHost::waitUntilReady() {
     ulTaskNotifyTake(false, 10000);
+    return *this;
 }
 
 // currently we only support one client
-void MidiHost::addClient(MidiClient* pClient) {
+MidiHost& MidiHost::addClient(MidiClient* pClient) {
     _pClient = pClient;
+    return *this;
 }
+
+// private
 
 void MidiHost::daemonTask(void *arg)
 {

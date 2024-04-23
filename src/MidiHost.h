@@ -10,9 +10,9 @@ class MidiHost {
 
         MidiHost();
         virtual ~MidiHost();
-        void begin();
-        void waitUntilReady();
-        void addClient(MidiClient* client);
+        MidiHost& begin();
+        MidiHost& waitUntilReady();
+        MidiHost& addClient(MidiClient* client);
 
         private:
             MidiClient* _pClient;
